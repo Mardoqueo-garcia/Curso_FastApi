@@ -18,19 +18,27 @@ app = FastAPI(
 movies = [
     {
         'id':1,
-        'Title':'Step up 3',
-        'Overview':'El baile callejero underground de Nueva York constituye el...',
-        'year': '2010',
+        'title':'Step up 3',
+        'overview':'El baile callejero underground de Nueva York constituye el...',
+        'year': 2010,
         'rating':8.9,
-        'category': "Baile"
+        'category': "baile"
     },
     {
         'id':2,
-        'Title':'Asi en la tierra como en el infierno',
-        'Overview':'La arqueóloga Scarlett Marlowe ha dedicado toda su vida a encontrar...',
-        'year': '2014',
-        'rating':9.1,
-        'category': "Terror"
+        'title':'Asi en la tierra como en el infierno',
+        'overview':'La arqueóloga Scarlett Marlowe ha dedicado toda su vida a encontrar...',
+        'year': 2014,
+        'rating':8.1,
+        'category': "terror"
+    },
+    {
+        'id':3,
+        'title':'Triunfos robados',
+        'overview':'La estudiante de primer año de la universidad Whittier y su amiga Monica forman parte...',
+        'year': 2004,
+        'rating':8.1,
+        'category': "baile"
     }
 ]
 
@@ -38,14 +46,14 @@ movies = [
 #METODOS GET
 @app.get('/', tags=['Home']) #nuestra ruta inicial, la etiqueta (tags) sirve para  agrupar determinadas rutas de nuestra aplicación
 def message(): #funcion del endpoint
-    return FileResponse('index.html') # de esta forma devolvemos un archivo html completo para mayor facilidad
+    return FileResponse('index.html') # de esta forma devolvemos un archivo html completo de html
 
 #metodo para retornar todas las peliculas
 @app.get('/movies', tags=['Movies'])
 def get_movies():
     return movies
 
-#metodo que recibira un parametro al acceder a esa url
+#Mediante parametros
 @app.get('/movies/{movie_id}', tags=['Movies']) #dentro de las llaves le especificamos que parametro debe ingresar
 def get_movies(movie_id : int): #de esta forma le definimos el parametro y el tipo de dato que debe recibir
     #codigo 1 (de la clase)
@@ -54,15 +62,41 @@ def get_movies(movie_id : int): #de esta forma le definimos el parametro y el ti
             return item #si ese fuese el caso, nos retornara la informacion de la pelicula basada en ese id
     return 'El id ingresado no existe' #de lo contrario nos arrojara un mensaje
     
-    #codigo 2 (aporte del compañero)
     '''
+    #codigo 2 (aporte)
     try:
         return movies[movie_id - 1]
     except IndexError:
         return {"error": "Movie not found"}
-    '''
-    #codigo 3 (aporte del compañero)
-    '''
+    
+    #codigo 3 (aporte)
     movie = list(filter(lambda x: x['id'] == movie_id,movies))
     return "Movie not found" if not movie else movie[0]
+    '''
+#Metodo mediante parametros query
+@app.get('/movies/', tags=['Movies']) #le agregamos el slash a la ruta para que detecte qeu se agregara un parametro query y no nos borre el otro metodo creado anteriormente.
+def get_movies_by_category(category : str, year : int): #no ingresamos la variable dentro de la url, automaticamente fastapi lo detectara como un parametro query.
+
+    #codigo 1 (mi aporte)
+    for items in movies:
+        if items['category']==category and items['year']==year:
+            return items
+    return f"No se encontro ninguna pelicula con el año {year} y la categoria {category}"
+
+    '''
+    #codigo 2 (aporte)
+    #mostrando lista mediante list comprenhesion
+    return [movie for movie in movies if movie['category'] == category]
+
+    #codigo 3 (aporte)
+    #mostrando la lista mediante el metodo filter
+    return list(filter(lambda item: item['category'] == category , movies))
+    
+    #codigo 4 (aporte)
+    # Filtrar las películas por categoría y año
+    filtered_movies = [movie for movie in movies if movie['category'] == category and movie['year'] == year]
+    # Si hay películas que cumplen (o sea la lista tiene elementos)
+    if filtered_movies:
+        return filtered_movies
+    return f'No hay películas para la categoría {category} y el año {year}'
     '''
