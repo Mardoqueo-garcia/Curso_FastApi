@@ -9,7 +9,7 @@ class User(BaseModel):
     password:str = Field(default='1234', min_length=4, max_length=12)
 
 #Esquema de datos generales de las peliculas
-class Movie(BaseModel):
+class Movie_model(BaseModel):
     id : Optional[int] = None #para que el id sea opcional
     title : str = Field(min_length=5, max_length=20) #le estamos definiendo cual es el limite de caracteres para el titulo
     overview : str = Field(min_length=10, max_length=50)
