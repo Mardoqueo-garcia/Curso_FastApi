@@ -7,21 +7,24 @@ from fastapi.encoders import jsonable_encoder #para convertir los datos en objet
 from pydantic import BaseModel, Field #BaseModel para crear esquemas de datos, Field es una funcion para validacion de datos a los campos del esquema
 from typing import Optional, List #Para que podamos poner como opcional un dato. List para indicar que devolveremos una lista 
 import datetime #modulo destinado a fechas
-
 #MANAGER
 from Manager.jwt_manager import create_token #importamos la funcion de generar el token
-from Auth.auth import JWTBearer
+
+#Error
+from middleware.error_handler import ErrorHandler
+from middleware.jwt_bearer import JWTBearer
 
 #BASE DE DATOS
 from config.database import Session, engine, Base
 from models.movie import Movie_models
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title= "Movies Server --Beta",
-    description= "Aca encontraras un servidor de peliculas Latinoamericanas usando una base de datos local.",
-    version= "0.1.0"
-)
+#Configuracion 
+app = FastAPI()
+app.title = "Movies Server --Beta"
+app.description = "Aca encontraras un servidor de peliculas Latinoamericanas usando una base de datos local."
+app.version = "0.2.1"
+app.middleware(ErrorHandler) #De esta forma estamos llamando el manejador de errores creado
 
 #Creacion del modelo para datos del usuario
 class User(BaseModel):
@@ -52,7 +55,20 @@ class Movie(BaseModel):
             }
         }
     '''
-
+'''
+#Manejo de errores dentro de las rutas usando la documentacion 
+@app.middleware("http")
+async def add_process_time_header(request : Request, call_next):
+    try:
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers['X-Process-Time'] = str(process_time)
+        return response
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={'Error in':str(e)})
+'''
+        
 @app.get('/', tags=['Home']) #nuestra ruta inicial, la etiqueta (tags) sirve para  agrupar determinadas rutas de nuestra aplicación
 def message():
      return HTMLResponse( #Forma de retornar un html con codigo dentro de return
@@ -71,7 +87,7 @@ def login(user : User): #recibira un usuario del tipo User
 
 #METODOS GET (metodo para retornar todas las peliculas)
 @app.get('/movies', tags=['Movies'], response_model=List[Movie], status_code=status.HTTP_200_OK, dependencies=[Depends(JWTBearer())]) #Le indicamos que el modelo de respuesta sera una lista de Movies, metodo protegido que depende de la clase JWTBearer()
-def get_movies():
+def get_movies() -> List[Movie]:
     try:
         db = Session() #Instancia de sesion
         result = db.query(Movie_models).all() #Nos traera todos los datos de la tabla Movie_models
@@ -80,7 +96,7 @@ def get_movies():
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 #Mediante parametros
 @app.get('/movies/{movie_id}', tags=['Movies'], response_model=Movie, status_code=status.HTTP_200_OK) #dentro de las llaves le especificamos que parametro debe ingresar. Le indicamos que el modelo de respuesta sera de la clase Movie
-def get_movies_by_id(movie_id : int = Path(ge=1, le=12)): #Definimos el parametro y el tipo de dato que debe recibir, validamos el parametro
+def get_movies_by_id(movie_id : int = Path(ge=1, le=12)) -> Movie: #Definimos el parametro y el tipo de dato que debe recibir, validamos el parametro
     try:
         db = Session()
         result = db.query(Movie_models).filter(Movie_models.id==movie_id).first() #filtramos los datos validando que sean del mismo id, first() ==> para que obtenga el primer resultado
@@ -91,10 +107,10 @@ def get_movies_by_id(movie_id : int = Path(ge=1, le=12)): #Definimos el parametr
     
 #Metodo mediante parametros query
 @app.get('/movies/category/', tags=['Movies'], response_model=List[Movie],status_code=status.HTTP_200_OK) #le agregamos el slash a la ruta para que detecte que se agregará un parametro query
-def get_movies_by_category(category:str = Query(min_length=3, max_length=15)): #no ingresamos la variable dentro de la url ya que automaticamente fastapi lo detectará como un parametro query. Validamos el parametro query dandole un limite de caracteres
+def get_movies_by_category(category:str = Query(min_length=3, max_length=15)) -> List[Movie]: #no ingresamos la variable dentro de la url ya que automaticamente fastapi lo detectará como un parametro query. Validamos el parametro query dandole un limite de caracteres
     try:
         db = Session()
-        result = db.query(Movie_models).filter(Movie_models.category==category).all()
+        result = db.query().filter(Movie_models.category==category).all()
         if not result:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'message':'Movie by category not Found'})
         return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(result))
@@ -103,7 +119,7 @@ def get_movies_by_category(category:str = Query(min_length=3, max_length=15)): #
 
 #METODO POST (para registrar nuevas peliculas)
 @app.post('/movies', tags=['Movies'], response_model=dict, status_code=status.HTTP_201_CREATED)
-def create_movie(movie: Movie): #requerimos una pelicula de la clase Movie
+def create_movie(movie: Movie) -> dict: #requerimos una pelicula de la clase Movie
     try:
         db = Session()
         new_movie = Movie_models(**movie.model_dump()) # ** <- para mandar los parametros y no escribiros manualmente
@@ -115,7 +131,7 @@ def create_movie(movie: Movie): #requerimos una pelicula de la clase Movie
 
 #METODO PUT (para actualizar una pelicula)
 @app.put('/movies/{id_movie}', tags=['Movies'], response_model=dict, status_code=status.HTTP_200_OK) #pediremos el id como parametro
-def update_movie(id_movie:int, movie : Movie):
+def update_movie(id_movie:int, movie : Movie) -> dict:
     try:
         db = Session()
         result = db.query(Movie_models).filter(Movie_models.id==id_movie).first()
@@ -133,7 +149,7 @@ def update_movie(id_movie:int, movie : Movie):
 
 #METODO DELETE (para eliminar una pelicula mediante el id que nos manden)
 @app.delete('/movies/{id_movie}', tags=['Movies'], response_model=dict, status_code=status.HTTP_200_OK) #La respuesta será un diccionario con un mensaje
-def delete_movie(id_movie:int):
+def delete_movie(id_movie:int) -> dict:
     try:
         db = Session()
         result = db.query(Movie_models).filter(Movie_models.id==id_movie).first()
