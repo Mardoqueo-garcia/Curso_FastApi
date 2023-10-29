@@ -4,7 +4,7 @@ from sqlalchemy import create_engine #create_engine ==> funcion para crear el mo
 from sqlalchemy.orm.session import sessionmaker #Sesion de conexion a la base de datos
 from sqlalchemy.ext.declarative import declarative_base #Para poder manipular todas las tablas 
 
-sqlite_file_name = '../database.sqlite' #variable para almacenenar el nombre de la base de datos, ../ ==> para que cree la base de datos en una carpeta anterior y no en la actual
+sqlite_file_name = '../database.sqlite3' #variable para almacenenar el nombre de la base de datos, ../ ==> para que cree la base de datos en una carpeta anterior y no en la actual
 base_dir = os.path.dirname(os.path.realpath(__file__)) #leer el directorio actual del archivo el cual es database.py
 
 database_url = f'sqlite:///{os.path.join(base_dir,sqlite_file_name)}' #sqlite:/// ==> manera de conectarse a una base de datos, {os.path.join(base_dir,sqlite_file_name)} ==> para unir las dos variables a nuestra url
