@@ -2,15 +2,10 @@
 from fastapi import APIRouter, HTTPException,status
 from fastapi.responses import JSONResponse
 #Others
-from pydantic import BaseModel, Field
-from Manager.jwt_manager import create_token #importamos la funcion de generar el token
+from utils.jwt_manager import create_token #importamos la funcion de generar el token
+from schemas.user import User
 
 user_router = APIRouter()
-
-#Creacion del modelo para datos del usuario
-class User(BaseModel):
-    email:str = Field(default='@gmail.com', min_length=13, max_length=20)
-    password:str = Field(default='1234', min_length=4, max_length=12)
 
 #metodo para recibir los datos del usuario
 @user_router.post('/login', tags=['Auth'])
