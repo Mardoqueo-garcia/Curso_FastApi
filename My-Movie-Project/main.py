@@ -1,5 +1,7 @@
 #FASTAPI
+import os
 from fastapi import FastAPI
+import uvicorn
 
 #MODULOS LOCALES
 from middleware.error_handler import ErrorHandler
@@ -21,3 +23,8 @@ app.middleware(ErrorHandler) #Agregamos el manejador de errores creado
 app.include_router(home.home_router) #Incluimos nuestra ruta principal
 app.include_router(user.user_router) #Incluimos nuestras rutas del login
 app.include_router(movie.movie_router) #Incluimos nuestras rutas de las movies
+
+#Ejecutar la aplicacion al servidor RailWay
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0",
+                port=int(os.environ.get("PORT", 8000)))
