@@ -26,5 +26,5 @@ app.include_router(movie.movie_router) #Incluimos nuestras rutas de las movies
 
 #Ejecutar la aplicacion al servidor RailWay
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0",
+    uvicorn.run("main:app",
                 port=int(os.environ.get("PORT", 8000)))
